@@ -1,0 +1,1644 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GrammarArena — brot2you</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+</head>
+<body style="margin:0;padding:0;background:#0F0F1A;">
+<div id="root">
+  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;color:#C8C8E0;font-family:sans-serif;">Chargement de GrammarArena…</div>
+</div>
+<script>
+const {
+  useState,
+  useEffect,
+  useRef,
+  useCallback
+} = React;
+const T = {
+  arena: "#0F0F1A",
+  night: "#1A1A2E",
+  panel: "#252540",
+  orange: "#FF6B35",
+  green: "#00D4AA",
+  gold: "#FFD700",
+  pearl: "#C8C8E0",
+  muted: "#6B6B9A",
+  red: "#FF4466",
+  purple: "#8B5CF6"
+};
+const BOSSES = [{
+  id: "modals",
+  name: "Lord Modal",
+  icon: "🧙",
+  level: "Collège / Lycée",
+  color: "#8B5CF6",
+  desc: "Can, could, must, should, might…"
+}, {
+  id: "tenses",
+  name: "Tense Titan",
+  icon: "⚔️",
+  level: "Collège",
+  color: T.orange,
+  desc: "Present simple vs continuous, past simple…"
+}, {
+  id: "perfect",
+  name: "Perfect Beast",
+  icon: "🐉",
+  level: "Lycée",
+  color: T.red,
+  desc: "Present perfect vs past simple"
+}, {
+  id: "passive",
+  name: "Passive Phantom",
+  icon: "👻",
+  level: "Lycée",
+  color: "#A78BFA",
+  desc: "Voix passive, toutes formes"
+}, {
+  id: "conditionals",
+  name: "Condition Crusher",
+  icon: "💀",
+  level: "Lycée",
+  color: "#F97316",
+  desc: "If clauses — type 1, 2, 3"
+}, {
+  id: "reported",
+  name: "Report Reaper",
+  icon: "🦇",
+  level: "Lycée",
+  color: "#EC4899",
+  desc: "Discours rapporté, backshift"
+}, {
+  id: "articles",
+  name: "Article Archer",
+  icon: "🏹",
+  level: "Collège",
+  color: T.green,
+  desc: "A, an, the ou zéro article"
+}, {
+  id: "comparatives",
+  name: "Comparator",
+  icon: "⚖️",
+  level: "Collège / Lycée",
+  color: T.gold,
+  desc: "Comparatifs et superlatifs"
+}, {
+  id: "questions",
+  name: "Question Queen",
+  icon: "👑",
+  level: "Collège",
+  color: "#22D3EE",
+  desc: "Formation des questions, question tags"
+}, {
+  id: "pronouns",
+  name: "Pronoun Prowler",
+  icon: "🐺",
+  level: "Collège",
+  color: "#34D399",
+  desc: "Pronoms sujets, compléments, réfléchis, relatifs"
+}, {
+  id: "plurals",
+  name: "Plural Predator",
+  icon: "🦖",
+  level: "Collège",
+  color: "#FB923C",
+  desc: "Pluriels réguliers et irréguliers"
+}, {
+  id: "quantifiers",
+  name: "Quantifier Knight",
+  icon: "⚗️",
+  level: "Collège / Lycée",
+  color: "#A3E635",
+  desc: "Some, any, much, many, a lot of, few, little…"
+}, {
+  id: "gerunds",
+  name: "Gerund Goblin",
+  icon: "👺",
+  level: "Lycée",
+  color: "#F472B6",
+  desc: "Verbe + infinitif ou gérondif (-ing)"
+}, {
+  id: "wish",
+  name: "Wish Wraith",
+  icon: "🌙",
+  level: "Lycée",
+  color: "#818CF8",
+  desc: "Wish, if only, would rather, it's time"
+}, {
+  id: "inversion",
+  name: "Inversion Imp",
+  icon: "🃏",
+  level: "Lycée",
+  color: "#E879F9",
+  desc: "Inversion formelle, adverbes négatifs"
+}];
+const QUESTIONS = {
+  modals: [{
+    type: "qcm",
+    q: "You ___ wear a seatbelt. It's the law.",
+    opts: ["might", "must", "would", "could"],
+    correct: 1,
+    rule: "MUST exprime l'obligation forte (loi, règle imposée)."
+  }, {
+    type: "qcm",
+    q: "She ___ speak three languages when she was young.",
+    opts: ["can", "could", "must", "should"],
+    correct: 1,
+    rule: "COULD est le passé de CAN pour une capacité passée."
+  }, {
+    type: "fill",
+    q: "You look tired. You ___ go to bed early tonight.",
+    answer: "should",
+    rule: "SHOULD exprime un conseil ou une recommandation.",
+    hint: "conseil"
+  }, {
+    type: "qcm",
+    q: "It's cloudy. It ___ rain later.",
+    opts: ["must", "can", "might", "shall"],
+    correct: 2,
+    rule: "MIGHT exprime une possibilité incertaine dans le futur."
+  }, {
+    type: "correct",
+    q: "You don't must smoke here. It's forbidden.",
+    answer: "mustn't",
+    rule: "La négation de MUST est MUSTN'T (interdiction), pas DON'T MUST.",
+    wrongWord: "don't must"
+  }, {
+    type: "qcm",
+    q: "___ you help me with this, please?",
+    opts: ["Shall", "Could", "Must", "Might"],
+    correct: 1,
+    rule: "COULD dans une question exprime une demande polie."
+  }, {
+    type: "fill",
+    q: "He's very late. He ___ have missed the bus.",
+    answer: "must",
+    rule: "MUST HAVE + participe passé = déduction logique sur le passé.",
+    hint: "déduction"
+  }, {
+    type: "transform",
+    q: "It's forbidden to park here. → You ___ park here.",
+    answer: "mustn't",
+    rule: "MUSTN'T traduit une interdiction formelle."
+  }],
+  tenses: [{
+    type: "qcm",
+    q: "Every morning, she ___ coffee before work.",
+    opts: ["drink", "drinks", "is drinking", "drank"],
+    correct: 1,
+    rule: "Present simple pour les habitudes et routines. He/she/it → verbe + S."
+  }, {
+    type: "qcm",
+    q: "Look! It ___ outside.",
+    opts: ["rains", "rain", "is raining", "rained"],
+    correct: 2,
+    rule: "Present continuous pour une action en cours au moment où on parle (look!)."
+  }, {
+    type: "fill",
+    q: "We ___ (visit) London last summer.",
+    answer: "visited",
+    rule: "Past simple pour une action terminée à un moment précis du passé.",
+    hint: "past simple"
+  }, {
+    type: "correct",
+    q: "I am knowing the answer.",
+    answer: "know",
+    rule: "KNOW est un stative verb — il ne s'utilise pas à la forme continue.",
+    wrongWord: "am knowing"
+  }, {
+    type: "qcm",
+    q: "He ___ TV when the phone rang.",
+    opts: ["watched", "watches", "was watching", "is watching"],
+    correct: 2,
+    rule: "Past continuous pour une action en cours quand une autre a interrompu."
+  }, {
+    type: "transform",
+    q: "She plays tennis every day. → Last week, she ___.",
+    answer: "played",
+    rule: "Past simple = verbe + ED pour les verbes réguliers."
+  }, {
+    type: "fill",
+    q: "They ___ (not / work) on Sundays.",
+    answer: "don't work",
+    rule: "Négation au present simple : don't (I/you/we/they) + base verbale.",
+    hint: "négation present simple"
+  }, {
+    type: "qcm",
+    q: "Listen! The birds ___.",
+    opts: ["sing", "are singing", "sang", "will sing"],
+    correct: 1,
+    rule: "Present continuous avec listen/look/watch pour une action perceptible maintenant."
+  }],
+  perfect: [{
+    type: "qcm",
+    q: "I ___ never ___ sushi before.",
+    opts: ["have / eaten", "did / eat", "had / eaten", "was / eating"],
+    correct: 0,
+    rule: "Present perfect avec NEVER pour une expérience de vie (lien avec le présent)."
+  }, {
+    type: "qcm",
+    q: "She ___ in Paris in 2019.",
+    opts: ["has lived", "lived", "has been living", "lives"],
+    correct: 1,
+    rule: "Past simple avec une date précise (2019) — action terminée, coupée du présent."
+  }, {
+    type: "fill",
+    q: "They ___ (just / finish) the project.",
+    answer: "have just finished",
+    rule: "JUST avec le present perfect = action très récemment terminée.",
+    hint: "present perfect + just"
+  }, {
+    type: "correct",
+    q: "Did you ever eat Japanese food?",
+    answer: "Have you ever eaten",
+    rule: "EVER avec une expérience de vie → present perfect, pas past simple.",
+    wrongWord: "Did you ever eat"
+  }, {
+    type: "qcm",
+    q: "How long ___ you ___ here?",
+    opts: ["did / live", "have / lived", "do / live", "were / living"],
+    correct: 1,
+    rule: "HOW LONG + present perfect pour une durée qui commence dans le passé et continue."
+  }, {
+    type: "transform",
+    q: "He started working here 5 years ago. (use: for) → He ___ here for 5 years.",
+    answer: "has worked",
+    rule: "Present perfect + FOR pour une durée continue jusqu'au présent."
+  }, {
+    type: "fill",
+    q: "I can't find my keys. I ___ (lose) them.",
+    answer: "have lost",
+    rule: "Present perfect quand le résultat présent est important (clés toujours perdues).",
+    hint: "résultat présent"
+  }, {
+    type: "qcm",
+    q: "When ___ you ___ to New York?",
+    opts: ["have / been", "did / go", "have / gone", "were / going"],
+    correct: 1,
+    rule: "WHEN demande un moment précis → past simple, pas present perfect."
+  }],
+  passive: [{
+    type: "qcm",
+    q: "English ___ all over the world.",
+    opts: ["speaks", "is spoken", "spoke", "is speaking"],
+    correct: 1,
+    rule: "Voix passive present simple : is/are + participe passé."
+  }, {
+    type: "transform",
+    q: "They built this bridge in 1890. → This bridge ___ in 1890.",
+    answer: "was built",
+    rule: "Voix passive past simple : was/were + participe passé."
+  }, {
+    type: "fill",
+    q: "The results ___ (announce) tomorrow.",
+    answer: "will be announced",
+    rule: "Voix passive futur : will be + participe passé.",
+    hint: "passif futur"
+  }, {
+    type: "correct",
+    q: "The cake was ate by the children.",
+    answer: "eaten",
+    rule: "Le participe passé de EAT est EATEN, pas ATE (qui est le past simple).",
+    wrongWord: "ate"
+  }, {
+    type: "qcm",
+    q: "The letter ___ by the secretary yesterday.",
+    opts: ["typed", "was typed", "is typed", "has typed"],
+    correct: 1,
+    rule: "Voix passive past simple avec BY pour indiquer l'agent."
+  }, {
+    type: "fill",
+    q: "A new hospital ___ (build) in our city at the moment.",
+    answer: "is being built",
+    rule: "Voix passive present continuous : is/are being + participe passé.",
+    hint: "passif continu"
+  }],
+  conditionals: [{
+    type: "qcm",
+    q: "If it rains tomorrow, we ___ stay at home.",
+    opts: ["would", "will", "might to", "should"],
+    correct: 1,
+    rule: "Conditionnel type 1 (réel) : If + present simple, WILL + base verbale."
+  }, {
+    type: "qcm",
+    q: "If I ___ a million euros, I would travel the world.",
+    opts: ["have", "had", "would have", "will have"],
+    correct: 1,
+    rule: "Conditionnel type 2 (irréel présent) : If + past simple, WOULD + base."
+  }, {
+    type: "fill",
+    q: "If she had studied harder, she ___ (pass) the exam.",
+    answer: "would have passed",
+    rule: "Conditionnel type 3 (irréel passé) : If + past perfect, WOULD HAVE + p.p.",
+    hint: "type 3"
+  }, {
+    type: "correct",
+    q: "If I would win the lottery, I would buy a yacht.",
+    answer: "won",
+    rule: "Dans la proposition en IF du type 2, on n'utilise JAMAIS WOULD. → If I won…",
+    wrongWord: "would win"
+  }, {
+    type: "qcm",
+    q: "___ you called me, I would have come.",
+    opts: ["If", "Unless", "Had", "Should"],
+    correct: 2,
+    rule: "HAD + sujet = inversion formelle pour remplacer IF dans le type 3."
+  }, {
+    type: "transform",
+    q: "She doesn't exercise, so she isn't healthy. → If she ___, she ___.",
+    answer: "exercised / would be",
+    rule: "Type 2 : situation contraire à la réalité présente."
+  }],
+  reported: [{
+    type: "qcm",
+    q: '"I like pizza." → She said she ___ pizza.',
+    opts: ["likes", "liked", "would like", "has liked"],
+    correct: 1,
+    rule: "Backshift : present simple → past simple au discours rapporté."
+  }, {
+    type: "fill",
+    q: '"I will call you." → He said he ___ call me.',
+    answer: "would",
+    rule: "Backshift : WILL → WOULD au discours rapporté.",
+    hint: "backshift will"
+  }, {
+    type: "correct",
+    q: "She asked me where do I live.",
+    answer: "where I lived",
+    rule: "Question rapportée : ordre affirmatif (sujet + verbe), pas d'inversion. + backshift.",
+    wrongWord: "where do I live"
+  }, {
+    type: "qcm",
+    q: '"Don\'t touch that!" → He told me ___ touch that.',
+    opts: ["don't", "not to", "to not", "didn't"],
+    correct: 1,
+    rule: "Ordre négatif rapporté : told + NOT TO + base verbale."
+  }, {
+    type: "fill",
+    q: '"I have finished." → She said she ___ finished.',
+    answer: "had",
+    rule: "Backshift : present perfect → past perfect au discours rapporté.",
+    hint: "backshift perfect"
+  }, {
+    type: "transform",
+    q: '"Are you tired?" → He asked me ___.',
+    answer: "if I was tired",
+    rule: "Question oui/non rapportée : IF/WHETHER + ordre affirmatif + backshift."
+  }],
+  articles: [{
+    type: "qcm",
+    q: "I saw ___ elephant at the zoo.",
+    opts: ["a", "an", "the", "—"],
+    correct: 1,
+    rule: "AN devant un son vocalique (elephant commence par le son /ɛ/)."
+  }, {
+    type: "qcm",
+    q: "___ sun rises in the east.",
+    opts: ["A", "An", "The", "—"],
+    correct: 2,
+    rule: "THE devant un élément unique dans le monde (the sun, the moon, the sky)."
+  }, {
+    type: "fill",
+    q: "She plays ___ piano every evening.",
+    answer: "the",
+    rule: "THE devant les instruments de musique (convention anglaise).",
+    hint: "instrument de musique"
+  }, {
+    type: "correct",
+    q: "He is a honest man.",
+    answer: "an",
+    rule: "AN devant un H muet (honest → son /ɒ/). Règle : son vocalique, pas lettre vocalique.",
+    wrongWord: "a"
+  }, {
+    type: "qcm",
+    q: "I love ___ chocolate.",
+    opts: ["a", "an", "the", "—"],
+    correct: 3,
+    rule: "Zéro article devant les noms indénombrables en sens général."
+  }, {
+    type: "qcm",
+    q: "Can you pass me ___ salt, please?",
+    opts: ["a", "an", "the", "—"],
+    correct: 2,
+    rule: "THE quand le référent est identifié par le contexte (la salière sur la table)."
+  }, {
+    type: "fill",
+    q: "___ Mount Everest is the highest mountain.",
+    answer: "—",
+    rule: "Zéro article devant les noms de montagnes, lacs, rues, continents.",
+    hint: "géographie"
+  }, {
+    type: "correct",
+    q: "I go to the school by bus every day.",
+    answer: "—",
+    rule: "TO SCHOOL (sans article) = l'institution pour sa fonction. THE school = le bâtiment.",
+    wrongWord: "the"
+  }],
+  comparatives: [{
+    type: "qcm",
+    q: "This film is ___ than the last one.",
+    opts: ["more boring", "boringer", "most boring", "boreder"],
+    correct: 0,
+    rule: "Adjectifs de 2+ syllabes : MORE + adjectif (jamais de -ER)."
+  }, {
+    type: "fill",
+    q: "He is ___ (tall) than his brother.",
+    answer: "taller",
+    rule: "Adjectifs courts (1 syllabe) : adjectif + ER au comparatif.",
+    hint: "comparatif court"
+  }, {
+    type: "correct",
+    q: "She is the most tall student in the class.",
+    answer: "tallest",
+    rule: "Superlatif des adjectifs courts : THE + adjectif + EST (pas THE MOST).",
+    wrongWord: "most tall"
+  }, {
+    type: "qcm",
+    q: "The more you practise, ___ you become.",
+    opts: ["the better", "the more good", "better", "more better"],
+    correct: 0,
+    rule: "Structure parallèle : The more… the + comparatif."
+  }, {
+    type: "fill",
+    q: "This is ___ (bad) film I have ever seen.",
+    answer: "the worst",
+    rule: "WORST = superlatif irrégulier de BAD (bad → worse → worst).",
+    hint: "superlatif irrégulier"
+  }, {
+    type: "qcm",
+    q: "My car is ___ as his.",
+    opts: ["as fast", "faster", "the fastest", "more fast"],
+    correct: 0,
+    rule: "Comparatif d'égalité : AS + adjectif + AS."
+  }, {
+    type: "correct",
+    q: "London is more big than Paris.",
+    answer: "bigger",
+    rule: "Adjectifs d'une syllabe : BIG → BIGGER (doublement de la consonne finale).",
+    wrongWord: "more big"
+  }, {
+    type: "fill",
+    q: "She runs ___ (fast) than anyone in the team.",
+    answer: "faster",
+    rule: "Les adverbes courts forment aussi leur comparatif en -ER.",
+    hint: "adverbe comparatif"
+  }],
+  questions: [{
+    type: "qcm",
+    q: "Which question is correct?",
+    opts: ["Where does she live?", "Where she lives?", "Where live she?", "Where does she lives?"],
+    correct: 0,
+    rule: "Questions avec auxiliaire DO/DOES : Wh- + do/does + sujet + base verbale."
+  }, {
+    type: "transform",
+    q: "She works in London. → ___ she work in London?",
+    answer: "Does",
+    rule: "3e personne du singulier : DOES à la question (le verbe reste à la base)."
+  }, {
+    type: "fill",
+    q: "He can swim, ___ he?",
+    answer: "can't",
+    rule: "Question tag négatif après une phrase affirmative : auxiliaire négatif + pronom.",
+    hint: "question tag"
+  }, {
+    type: "correct",
+    q: "What time does the film starts?",
+    answer: "start",
+    rule: "Avec DOES dans la question, le verbe principal reste à la BASE (sans -s).",
+    wrongWord: "starts"
+  }, {
+    type: "qcm",
+    q: "___ is she talking to on the phone?",
+    opts: ["Who", "Whom", "Which", "What"],
+    correct: 0,
+    rule: "WHO pour les personnes en sujet ou complément en anglais courant."
+  }, {
+    type: "fill",
+    q: "They didn't call, ___ they?",
+    answer: "did they",
+    rule: "Question tag affirmatif après une phrase négative : auxiliaire positif + pronom.",
+    hint: "question tag négatif → tag positif"
+  }, {
+    type: "qcm",
+    q: "How ___ does it take to get there?",
+    opts: ["long", "far", "much", "many"],
+    correct: 0,
+    rule: "HOW LONG pour une durée. HOW FAR pour une distance. HOW MUCH/MANY pour une quantité."
+  }, {
+    type: "correct",
+    q: "Why you are crying?",
+    answer: "Why are you crying?",
+    rule: "Dans les questions, l'auxiliaire se place AVANT le sujet (inversion sujet-auxiliaire).",
+    wrongWord: "you are"
+  }],
+  pronouns: [{
+    type: "qcm",
+    q: "This is the girl ___ I told you about.",
+    opts: ["who", "which", "what", "whom"],
+    correct: 0,
+    rule: "WHO pour les personnes (pronom relatif sujet ou complément en registre courant)."
+  }, {
+    type: "fill",
+    q: "She cut ___ while cooking. (herself)",
+    answer: "herself",
+    rule: "Pronom réfléchi 3e pers. sing. féminin : HERSELF.",
+    hint: "pronom réfléchi"
+  }, {
+    type: "correct",
+    q: "Give it to I, please.",
+    answer: "me",
+    rule: "Après une préposition (to, for, with…), on utilise le pronom complément : ME (pas I).",
+    wrongWord: "I"
+  }, {
+    type: "qcm",
+    q: "The house ___ we bought is very old.",
+    opts: ["who", "which", "what", "whom"],
+    correct: 1,
+    rule: "WHICH pour les choses et les animaux (pronom relatif)."
+  }, {
+    type: "fill",
+    q: "We enjoyed ___ at the party.",
+    answer: "ourselves",
+    rule: "Pronom réfléchi 1ère pers. pluriel : OURSELVES.",
+    hint: "pronom réfléchi pluriel"
+  }, {
+    type: "qcm",
+    q: "It was ___ who called you, not me.",
+    opts: ["her", "she", "hers", "herself"],
+    correct: 1,
+    rule: "Pronom sujet (SHE) en position de sujet, même après IT WAS."
+  }, {
+    type: "correct",
+    q: "The book who I read was amazing.",
+    answer: "which / that",
+    rule: "WHICH ou THAT pour les choses — WHO s'utilise uniquement pour les personnes.",
+    wrongWord: "who"
+  }, {
+    type: "transform",
+    q: "Tom helped Lucy. → Lucy was helped by ___.",
+    answer: "him",
+    rule: "Pronom complément (HIM) après BY dans la voix passive."
+  }],
+  plurals: [{
+    type: "qcm",
+    q: "What is the plural of 'child'?",
+    opts: ["childs", "childes", "children", "childrens"],
+    correct: 2,
+    rule: "CHILD → CHILDREN : pluriel irrégulier à mémoriser."
+  }, {
+    type: "fill",
+    q: "There are three ___ (woman) in the room.",
+    answer: "women",
+    rule: "WOMAN → WOMEN : changement de voyelle interne (pluriel irrégulier).",
+    hint: "pluriel irrégulier"
+  }, {
+    type: "correct",
+    q: "I need to buy some informations.",
+    answer: "information",
+    rule: "INFORMATION est indénombrable en anglais — pas de pluriel, pas d'article indéfini.",
+    wrongWord: "informations"
+  }, {
+    type: "qcm",
+    q: "What is the plural of 'knife'?",
+    opts: ["knifes", "knives", "knifes", "knife"],
+    correct: 1,
+    rule: "Noms en -FE → pluriel en -VES : knife → knives, life → lives, wife → wives."
+  }, {
+    type: "fill",
+    q: "We saw many ___ (sheep) on the farm.",
+    answer: "sheep",
+    rule: "SHEEP → SHEEP : pluriel identique au singulier (comme fish, deer, species).",
+    hint: "pluriel identique"
+  }, {
+    type: "correct",
+    q: "She gave me a good advise.",
+    answer: "advice",
+    rule: "ADVICE est indénombrable. Pour individualiser : a piece of advice.",
+    wrongWord: "advise"
+  }, {
+    type: "qcm",
+    q: "What is the plural of 'phenomenon'?",
+    opts: ["phenomenons", "phenomenas", "phenomena", "phenomenes"],
+    correct: 2,
+    rule: "Mots d'origine grecque/latine gardent parfois leur pluriel : phenomenon → phenomena."
+  }, {
+    type: "fill",
+    q: "Two ___ (tooth) were broken in the accident.",
+    answer: "teeth",
+    rule: "TOOTH → TEETH : pluriel irrégulier par changement vocalique.",
+    hint: "pluriel irrégulier"
+  }],
+  quantifiers: [{
+    type: "qcm",
+    q: "There isn't ___ milk left.",
+    opts: ["many", "some", "much", "a few"],
+    correct: 2,
+    rule: "MUCH avec les noms indénombrables (milk, money, time…) dans les négatifs/questions."
+  }, {
+    type: "fill",
+    q: "I have ___ friends in Paris — only two.",
+    answer: "few",
+    rule: "FEW (sans A) = presque pas, sens négatif. A FEW = quelques-uns, sens positif.",
+    hint: "peu de (sens négatif)"
+  }, {
+    type: "correct",
+    q: "There are much students in this class.",
+    answer: "many",
+    rule: "MANY avec les noms dénombrables pluriels. MUCH avec les indénombrables.",
+    wrongWord: "much"
+  }, {
+    type: "qcm",
+    q: "Would you like ___ more tea?",
+    opts: ["any", "some", "many", "few"],
+    correct: 1,
+    rule: "SOME dans les offres et propositions (même en question) pour être plus poli."
+  }, {
+    type: "fill",
+    q: "There is very ___ hope left. Things look bad.",
+    answer: "little",
+    rule: "LITTLE (sans A) avec indénombrable = presque rien (sens négatif). A LITTLE = un peu.",
+    hint: "indénombrable, sens négatif"
+  }, {
+    type: "qcm",
+    q: "Do you have ___ questions?",
+    opts: ["some", "any", "much", "little"],
+    correct: 1,
+    rule: "ANY dans les questions et phrases négatives (noms dénombrables et indénombrables)."
+  }, {
+    type: "correct",
+    q: "I don't have some money.",
+    answer: "any",
+    rule: "Dans les phrases négatives, on utilise ANY, pas SOME.",
+    wrongWord: "some"
+  }, {
+    type: "fill",
+    q: "A ___ (= quelques) students passed the exam.",
+    answer: "few",
+    rule: "A FEW + dénombrable pluriel = quelques (sens légèrement positif).",
+    hint: "quelques (dénombrable)"
+  }],
+  gerunds: [{
+    type: "qcm",
+    q: "She enjoys ___ to music.",
+    opts: ["listen", "to listen", "listening", "listened"],
+    correct: 2,
+    rule: "ENJOY + gérondif (-ING). Verbes de goût (enjoy, love, hate, mind) → -ING."
+  }, {
+    type: "fill",
+    q: "He refused ___ (help) us.",
+    answer: "to help",
+    rule: "REFUSE + infinitif avec TO. Verbes de volonté (refuse, decide, agree, want) → TO + infinitif.",
+    hint: "infinitif avec TO"
+  }, {
+    type: "correct",
+    q: "I'm looking forward to meet you.",
+    answer: "meeting",
+    rule: "LOOK FORWARD TO est suivi du gérondif (-ING), car TO est ici une préposition.",
+    wrongWord: "meet"
+  }, {
+    type: "qcm",
+    q: "They decided ___ earlier.",
+    opts: ["leaving", "to leave", "leave", "left"],
+    correct: 1,
+    rule: "DECIDE + TO + infinitif. Ne pas confondre avec les verbes de goût."
+  }, {
+    type: "fill",
+    q: "Stop ___ (make) so much noise!",
+    answer: "making",
+    rule: "STOP + gérondif = arrêter de faire qqch. STOP + TO infinitif = s'arrêter pour faire qqch.",
+    hint: "gérondif"
+  }, {
+    type: "qcm",
+    q: "I remember ___ the key on the table.",
+    opts: ["to put", "putting", "put", "having put"],
+    correct: 1,
+    rule: "REMEMBER + -ING = se souvenir d'avoir fait. REMEMBER + TO = ne pas oublier de faire."
+  }, {
+    type: "correct",
+    q: "She avoided to answer the question.",
+    answer: "answering",
+    rule: "AVOID + gérondif obligatoirement. (avoid, consider, suggest, deny, admit → -ING)",
+    wrongWord: "to answer"
+  }, {
+    type: "transform",
+    q: "She said: 'I will come.' → She promised ___ come.",
+    answer: "to",
+    rule: "PROMISE + TO + infinitif (verbe de promesse → infinitif)."
+  }],
+  wish: [{
+    type: "qcm",
+    q: "I wish I ___ taller.",
+    opts: ["am", "was / were", "will be", "would be"],
+    correct: 1,
+    rule: "WISH + past simple (ou WERE pour tous les sujets) = regret sur le présent."
+  }, {
+    type: "fill",
+    q: "She wishes she ___ (study) harder last year.",
+    answer: "had studied",
+    rule: "WISH + past perfect = regret sur le passé (on ne peut plus changer).",
+    hint: "regret passé"
+  }, {
+    type: "correct",
+    q: "I wish I would have more time.",
+    answer: "had",
+    rule: "Après WISH pour le présent : past simple (HAD), jamais WOULD HAVE.",
+    wrongWord: "would have"
+  }, {
+    type: "qcm",
+    q: "If only she ___ stop talking!",
+    opts: ["will", "would", "could", "should"],
+    correct: 1,
+    rule: "WISH/IF ONLY + WOULD = exprimer une irritation ou un désir que quelqu'un change."
+  }, {
+    type: "fill",
+    q: "It's time you ___ (go) to bed.",
+    answer: "went",
+    rule: "IT'S TIME + past simple = il est temps que (quelqu'un fasse quelque chose maintenant).",
+    hint: "it's time + prétérit"
+  }, {
+    type: "qcm",
+    q: "I'd rather you ___ come tomorrow.",
+    opts: ["come", "came", "would come", "to come"],
+    correct: 1,
+    rule: "I'D RATHER + sujet + past simple pour exprimer une préférence sur les actions des autres."
+  }, {
+    type: "correct",
+    q: "If only I don't make that mistake.",
+    answer: "hadn't made",
+    rule: "IF ONLY + past perfect pour un regret sur le passé.",
+    wrongWord: "don't make"
+  }, {
+    type: "fill",
+    q: "He wishes he ___ (can) play the guitar.",
+    answer: "could",
+    rule: "WISH + COULD = regret sur une capacité présente (CAN → COULD au passé).",
+    hint: "capacité souhaitée"
+  }],
+  inversion: [{
+    type: "qcm",
+    q: "Never ___ I seen such a beautiful sunset.",
+    opts: ["have", "I have", "did", "had"],
+    correct: 0,
+    rule: "NEVER en tête de phrase → inversion sujet-auxiliaire : Never have I..."
+  }, {
+    type: "correct",
+    q: "Hardly I had arrived when the show started.",
+    answer: "Hardly had I arrived",
+    rule: "HARDLY en tête de phrase → inversion obligatoire : Hardly had I + p.p.",
+    wrongWord: "Hardly I had arrived"
+  }, {
+    type: "fill",
+    q: "Not only ___ he lie, but he also stole.",
+    answer: "did",
+    rule: "NOT ONLY en tête → inversion avec DO/DID : Not only did he lie…",
+    hint: "inversion avec DO"
+  }, {
+    type: "qcm",
+    q: "Seldom ___ she complains about anything.",
+    opts: ["she does", "does she", "she is", "is she"],
+    correct: 1,
+    rule: "Adverbes de fréquence négatifs (seldom, rarely, never) en tête → inversion."
+  }, {
+    type: "transform",
+    q: "No sooner ___ (had I sat down) than he arrived.",
+    answer: "had I sat down than he arrived",
+    rule: "NO SOONER…THAN en tête → inversion : No sooner had + sujet + p.p."
+  }, {
+    type: "qcm",
+    q: "Under no circumstances ___ use your phone here.",
+    opts: ["you should", "should you", "you must", "must you"],
+    correct: 1,
+    rule: "UNDER NO CIRCUMSTANCES → inversion sujet-auxiliaire (registre très formel)."
+  }, {
+    type: "fill",
+    q: "Only after the meeting ___ (she / understand) the problem.",
+    answer: "did she understand",
+    rule: "ONLY AFTER en tête → inversion avec DO/DID : Only after… did she understand.",
+    hint: "inversion avec did"
+  }, {
+    type: "correct",
+    q: "So tired I was that I fell asleep immediately.",
+    answer: "So tired was I",
+    rule: "SO + adjectif en tête → inversion : So tired was I that…",
+    wrongWord: "So tired I was"
+  }]
+};
+const WIN_MSGS = ["Excellent !", "Parfait !", "En plein dans le mille !", "Bravo !", "Imbattable !"];
+const LOSE_MSGS = ["Pas tout à fait…", "Raté !", "Attention !", "Relis la règle…", "Presque !"];
+const randMsg = arr => arr[Math.floor(Math.random() * arr.length)];
+const norm = s => s.trim().toLowerCase().replace(/['']/g, "'");
+function HealthBar({
+  hp,
+  maxHp,
+  color,
+  label
+}) {
+  const pct = Math.max(0, hp / maxHp * 100);
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      marginBottom: 4
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: "'Orbitron',sans-serif",
+      fontSize: 10,
+      color: T.muted,
+      letterSpacing: 1
+    }
+  }, label), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: "'Orbitron',sans-serif",
+      fontSize: 10,
+      color
+    }
+  }, hp, "/", maxHp)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 10,
+      background: T.arena,
+      borderRadius: 5,
+      overflow: "hidden",
+      border: `1px solid ${color}30`
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: "100%",
+      width: `${pct}%`,
+      background: color,
+      borderRadius: 5,
+      transition: "width 0.4s ease",
+      boxShadow: `0 0 8px ${color}80`
+    }
+  })));
+}
+function GrammarArena() {
+  const [screen, setScreen] = useState("home");
+  const [gameMode, setGameMode] = useState(null);
+  const [boss, setBoss] = useState(null);
+  const [questions, setQuestions] = useState([]);
+  const [qIndex, setQIndex] = useState(0);
+  const [selected, setSelected] = useState(null);
+  const [fillVal, setFillVal] = useState("");
+  const [feedback, setFeedback] = useState(null);
+  const [score, setScore] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [bossHp, setBossHp] = useState(100);
+  const [playerHp, setPlayerHp] = useState(100);
+  const [timeLeft, setTimeLeft] = useState(20);
+  const [flash, setFlash] = useState(null);
+  const [lvl, setLvl] = useState("all");
+  const timerRef = useRef(null);
+  const currentQ = questions[qIndex];
+  function startBattle(b, mode) {
+    const pool = [...(QUESTIONS[b.id] || [])].sort(() => Math.random() - 0.5);
+    setBoss(b);
+    setGameMode(mode);
+    setQuestions(pool);
+    setQIndex(0);
+    setScore(0);
+    setStreak(0);
+    setBossHp(100);
+    setPlayerHp(100);
+    setTimeLeft(20);
+    setFeedback(null);
+    setSelected(null);
+    setFillVal("");
+    setFlash(null);
+    setScreen("battle");
+  }
+  useEffect(() => {
+    if (screen !== "battle" || gameMode !== "arcade" || feedback !== null) return;
+    timerRef.current = setInterval(() => {
+      setTimeLeft(t => {
+        if (t <= 1) {
+          clearInterval(timerRef.current);
+          handleAnswer(false);
+          return 20;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timerRef.current);
+  }, [screen, gameMode, feedback, qIndex]);
+  const handleAnswer = useCallback(ok => {
+    clearInterval(timerRef.current);
+    const ns = ok ? streak + 1 : 0;
+    const pts = ok ? ns >= 3 ? 15 : 10 : 0;
+    setStreak(ns);
+    setScore(s => s + pts);
+    if (ok) {
+      setBossHp(h => Math.max(0, h - (ns >= 3 ? 20 : 12)));
+      setFlash("hit");
+    } else {
+      setPlayerHp(h => Math.max(0, h - 20));
+      setFlash("ko");
+    }
+    setTimeout(() => setFlash(null), 500);
+    setFeedback({
+      correct: ok,
+      msg: randMsg(ok ? WIN_MSGS : LOSE_MSGS),
+      rule: currentQ?.rule || ""
+    });
+  }, [streak, currentQ]);
+  function next() {
+    const n = qIndex + 1;
+    if (n >= questions.length || bossHp <= 0 || playerHp <= 0) {
+      setScreen("result");
+      return;
+    }
+    setQIndex(n);
+    setFeedback(null);
+    setSelected(null);
+    setFillVal("");
+    setTimeLeft(20);
+  }
+  const filtered = BOSSES.filter(b => lvl === "all" || lvl === "college" && b.level.includes("Collège") || lvl === "lycee" && b.level.includes("Lycée"));
+  const timerColor = timeLeft <= 5 ? T.red : timeLeft <= 10 ? T.gold : T.green;
+  const CSS = `@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.2)}100%{transform:scale(1)}}.bh:hover{filter:brightness(1.15);transform:translateY(-2px)}.bh{transition:all 0.15s}.oh:hover{filter:brightness(1.1)}.oh{transition:all 0.15s}*{box-sizing:border-box}`;
+  if (screen === "home") return /*#__PURE__*/React.createElement("div", {
+    style: {
+      minHeight: "100vh",
+      background: T.arena,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      fontFamily: "'Inter',sans-serif",
+      padding: 24
+    }
+  }, /*#__PURE__*/React.createElement("style", null, CSS), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      maxWidth: 480
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 64,
+      marginBottom: 16,
+      animation: "pulse 2s infinite"
+    }
+  }, "⚔️"), /*#__PURE__*/React.createElement("h1", {
+    style: {
+      fontFamily: "'Orbitron',sans-serif",
+      color: T.pearl,
+      fontSize: 42,
+      margin: "0 0 4px",
+      letterSpacing: 2,
+      fontWeight: 900
+    }
+  }, "GRAMMAR", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: T.orange
+    }
+  }, "ARENA")), /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: T.muted,
+      fontSize: 13,
+      marginBottom: 40,
+      letterSpacing: 1
+    }
+  }, "BATS LES BOSS · MONTE EN NIVEAU · MAÎTRISE LA GRAMMAIRE"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 14,
+      justifyContent: "center",
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "bh",
+    onClick: () => {
+      setGameMode("solo");
+      setScreen("select");
+    },
+    style: {
+      background: T.green,
+      color: T.arena,
+      border: "none",
+      padding: "14px 32px",
+      borderRadius: 10,
+      fontFamily: "'Orbitron',sans-serif",
+      fontSize: 13,
+      fontWeight: 700,
+      cursor: "pointer",
+      letterSpacing: 1
+    }
+  }, "▶ MODE SOLO"), /*#__PURE__*/React.createElement("button", {
+    className: "bh",
+    onClick: () => {
+      setGameMode("arcade");
+      setScreen("select");
+    },
+    style: {
+      background: T.orange,
+      color: T.arena,
+      border: "none",
+      padding: "14px 32px",
+      borderRadius: 10,
+      fontFamily: "'Orbitron',sans-serif",
+      fontSize: 13,
+      fontWeight: 700,
+      cursor: "pointer",
+      letterSpacing: 1
+    }
+  }, "⚡ MODE ARCADE")), /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: T.muted,
+      fontSize: 11,
+      marginTop: 20
+    }
+  }, "Arcade = chronomètre · Solo = à ton rythme")));
+  if (screen === "select") return /*#__PURE__*/React.createElement("div", {
+    style: {
+      minHeight: "100vh",
+      background: T.arena,
+      fontFamily: "'Inter',sans-serif",
+      padding: 24
+    }
+  }, /*#__PURE__*/React.createElement("style", null, CSS), /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxWidth: 700,
+      margin: "0 auto"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 24
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setScreen("home"),
+    style: {
+      background: "none",
+      border: "none",
+      color: T.muted,
+      cursor: "pointer",
+      fontSize: 13,
+      padding: 0
+    }
+  }, "← Retour"), /*#__PURE__*/React.createElement("h2", {
+    style: {
+      fontFamily: "'Orbitron',sans-serif",
+      color: T.pearl,
+      fontSize: 20,
+      margin: "6px 0 0",
+      letterSpacing: 1
+    }
+  }, "CHOISIS TON ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: gameMode === "arcade" ? T.orange : T.green
+    }
+  }, "BOSS"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6
+    }
+  }, [["all", "Tous"], ["college", "Collège"], ["lycee", "Lycée"]].map(([v, l]) => /*#__PURE__*/React.createElement("button", {
+    key: v,
+    onClick: () => setLvl(v),
+    style: {
+      background: lvl === v ? T.panel : "transparent",
+      color: lvl === v ? T.pearl : T.muted,
+      border: `1px solid ${lvl === v ? T.muted + "60" : T.muted + "20"}`,
+      padding: "5px 10px",
+      borderRadius: 6,
+      cursor: "pointer",
+      fontSize: 11,
+      fontFamily: "'Inter',sans-serif"
+    }
+  }, l)))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))",
+      gap: 12
+    }
+  }, filtered.map(b => /*#__PURE__*/React.createElement("div", {
+    key: b.id,
+    className: "bh",
+    onClick: () => startBattle(b, gameMode),
+    style: {
+      background: T.night,
+      border: `2px solid ${b.color}40`,
+      borderRadius: 14,
+      padding: 18,
+      cursor: "pointer"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 36,
+      marginBottom: 10
+    }
+  }, b.icon), /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: b.color,
+      fontFamily: "'Orbitron',sans-serif",
+      fontSize: 11,
+      margin: "0 0 4px",
+      letterSpacing: 1,
+      fontWeight: 700
+    }
+  }, b.name.toUpperCase()), /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: T.muted,
+      fontSize: 11,
+      margin: "0 0 10px"
+    }
+  }, b.desc), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: "'Orbitron',sans-serif",
+      fontSize: 9,
+      color: b.color,
+      background: b.color + "20",
+      padding: "2px 8px",
+      borderRadius: 10
+    }
+  }, b.level.toUpperCase()))))));
+  if (screen === "battle" && currentQ) {
+    const prog = Math.round(qIndex / questions.length * 100);
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        minHeight: "100vh",
+        background: flash === "hit" ? "#001a10" : flash === "ko" ? "#1a0010" : T.arena,
+        transition: "background 0.2s",
+        fontFamily: "'Inter',sans-serif",
+        padding: "16px 16px 32px"
+      }
+    }, /*#__PURE__*/React.createElement("style", null, CSS), /*#__PURE__*/React.createElement("div", {
+      style: {
+        maxWidth: 640,
+        margin: "0 auto"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 16,
+        alignItems: "center",
+        marginBottom: 16
+      }
+    }, /*#__PURE__*/React.createElement(HealthBar, {
+      hp: playerHp,
+      maxHp: 100,
+      color: T.green,
+      label: "TOI"
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        textAlign: "center",
+        flexShrink: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: "'Orbitron',sans-serif",
+        fontSize: 22,
+        color: T.gold,
+        fontWeight: 900
+      }
+    }, score), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 9,
+        color: T.muted,
+        letterSpacing: 1
+      }
+    }, "SCORE"), streak >= 2 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: "'Orbitron',sans-serif",
+        fontSize: 10,
+        color: T.orange,
+        animation: "pop 0.4s"
+      }
+    }, "🔥×", streak)), /*#__PURE__*/React.createElement(HealthBar, {
+      hp: bossHp,
+      maxHp: 100,
+      color: boss?.color || T.orange,
+      label: boss?.name?.toUpperCase() || "BOSS"
+    })), gameMode === "arcade" && !feedback && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        marginBottom: 12
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        height: 6,
+        background: T.arena,
+        borderRadius: 3,
+        overflow: "hidden"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: "100%",
+        width: `${timeLeft / 20 * 100}%`,
+        background: timerColor,
+        borderRadius: 3,
+        transition: "width 1s linear,background 0.3s"
+      }
+    })), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: "'Orbitron',sans-serif",
+        fontSize: 16,
+        color: timerColor,
+        fontWeight: 700,
+        minWidth: 24,
+        textAlign: "right"
+      }
+    }, timeLeft)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: 3,
+        background: T.panel,
+        borderRadius: 2,
+        marginBottom: 20,
+        overflow: "hidden"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        height: "100%",
+        width: `${prog}%`,
+        background: "#8B5CF6",
+        borderRadius: 2,
+        transition: "width 0.3s"
+      }
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        textAlign: "center",
+        marginBottom: 16
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 52,
+        display: "block",
+        filter: bossHp < 30 ? "grayscale(0.5)" : "none"
+      }
+    }, boss?.icon), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: "'Orbitron',sans-serif",
+        fontSize: 11,
+        color: boss?.color,
+        letterSpacing: 2
+      }
+    }, boss?.name?.toUpperCase())), /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: T.night,
+        border: `1px solid ${T.muted}30`,
+        borderRadius: 16,
+        padding: "22px 20px",
+        marginBottom: 16
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        marginBottom: 14
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10,
+        color: T.muted,
+        background: T.panel,
+        padding: "3px 10px",
+        borderRadius: 10,
+        letterSpacing: 1
+      }
+    }, currentQ.type === "qcm" ? "QCM" : currentQ.type === "fill" ? "À COMPLÉTER" : currentQ.type === "correct" ? "À CORRIGER" : "TRANSFORMATION"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 10,
+        color: T.muted
+      }
+    }, qIndex + 1, " / ", questions.length)), /*#__PURE__*/React.createElement("p", {
+      style: {
+        color: T.pearl,
+        fontSize: 16,
+        lineHeight: 1.6,
+        margin: "0 0 20px",
+        fontWeight: 500
+      }
+    }, currentQ.type === "correct" ? /*#__PURE__*/React.createElement("span", null, "Corrige l'erreur dans : ", /*#__PURE__*/React.createElement("em", {
+      style: {
+        color: T.orange
+      }
+    }, "\"", currentQ.q, "\"")) : currentQ.q), currentQ.hint && !feedback && /*#__PURE__*/React.createElement("p", {
+      style: {
+        color: T.muted,
+        fontSize: 11,
+        margin: "-10px 0 16px",
+        fontStyle: "italic"
+      }
+    }, "💡 Indice : ", currentQ.hint), currentQ.type === "qcm" && !feedback && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: 8
+      }
+    }, currentQ.opts.map((opt, i) => /*#__PURE__*/React.createElement("button", {
+      key: i,
+      className: "oh",
+      onClick: () => {
+        setSelected(i);
+        handleAnswer(i === currentQ.correct);
+      },
+      style: {
+        background: T.panel,
+        border: `1px solid ${T.muted}40`,
+        borderRadius: 10,
+        padding: "12px 14px",
+        color: T.pearl,
+        textAlign: "left",
+        cursor: "pointer",
+        fontSize: 14,
+        fontFamily: "'Inter',sans-serif",
+        fontWeight: 500
+      }
+    }, opt))), currentQ.type === "qcm" && feedback && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: 8
+      }
+    }, currentQ.opts.map((opt, i) => /*#__PURE__*/React.createElement("div", {
+      key: i,
+      style: {
+        background: i === currentQ.correct ? T.green + "20" : selected === i && selected !== currentQ.correct ? T.red + "20" : T.panel,
+        border: `1px solid ${i === currentQ.correct ? T.green : selected === i && selected !== currentQ.correct ? T.red : T.muted + "20"}`,
+        borderRadius: 10,
+        padding: "12px 14px",
+        color: i === currentQ.correct ? T.green : T.pearl,
+        fontSize: 14,
+        fontWeight: i === currentQ.correct ? 700 : 400
+      }
+    }, i === currentQ.correct ? "✓ " : selected === i ? "✗ " : "", opt))), (currentQ.type === "fill" || currentQ.type === "correct" || currentQ.type === "transform") && !feedback && /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 8
+      }
+    }, /*#__PURE__*/React.createElement("input", {
+      autoFocus: true,
+      value: fillVal,
+      onChange: e => setFillVal(e.target.value),
+      onKeyDown: e => e.key === "Enter" && (norm(fillVal) === norm(currentQ.answer) ? handleAnswer(true) : handleAnswer(false)),
+      placeholder: currentQ.type === "correct" ? "Écris le bon mot…" : "Ta réponse…",
+      style: {
+        flex: 1,
+        background: T.panel,
+        border: `1px solid ${T.muted}40`,
+        borderRadius: 10,
+        padding: "12px 14px",
+        color: T.pearl,
+        fontFamily: "'Inter',sans-serif",
+        fontSize: 14,
+        outline: "none"
+      }
+    }), /*#__PURE__*/React.createElement("button", {
+      onClick: () => handleAnswer(norm(fillVal) === norm(currentQ.answer)),
+      style: {
+        background: T.orange,
+        color: T.arena,
+        border: "none",
+        padding: "12px 18px",
+        borderRadius: 10,
+        fontFamily: "'Orbitron',sans-serif",
+        fontSize: 12,
+        fontWeight: 700,
+        cursor: "pointer"
+      }
+    }, "OK")), (currentQ.type === "fill" || currentQ.type === "correct" || currentQ.type === "transform") && feedback && /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: T.panel,
+        borderRadius: 10,
+        padding: "12px 14px"
+      }
+    }, /*#__PURE__*/React.createElement("p", {
+      style: {
+        color: T.muted,
+        fontSize: 11,
+        margin: "0 0 4px"
+      }
+    }, "TA RÉPONSE"), /*#__PURE__*/React.createElement("p", {
+      style: {
+        color: feedback.correct ? T.green : T.red,
+        fontSize: 15,
+        fontWeight: 700,
+        margin: "0 0 8px"
+      }
+    }, fillVal || "—"), !feedback.correct && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("p", {
+      style: {
+        color: T.muted,
+        fontSize: 11,
+        margin: "0 0 4px"
+      }
+    }, "BONNE RÉPONSE"), /*#__PURE__*/React.createElement("p", {
+      style: {
+        color: T.green,
+        fontSize: 15,
+        fontWeight: 700,
+        margin: 0
+      }
+    }, currentQ.answer)))), feedback && /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: feedback.correct ? T.green + "15" : T.red + "15",
+        border: `1px solid ${feedback.correct ? T.green : T.red}40`,
+        borderRadius: 12,
+        padding: "14px 18px",
+        marginBottom: 14
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 8
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: "'Orbitron',sans-serif",
+        fontSize: 14,
+        color: feedback.correct ? T.green : T.red,
+        fontWeight: 700
+      }
+    }, feedback.correct ? "✓" : "✗", " ", feedback.msg), feedback.correct && streak >= 2 && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: "'Orbitron',sans-serif",
+        fontSize: 11,
+        color: T.gold
+      }
+    }, "🔥 COMBO ×", streak, " +", streak >= 3 ? 15 : 10, "pts")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: T.arena,
+        borderRadius: 8,
+        padding: "8px 12px"
+      }
+    }, /*#__PURE__*/React.createElement("p", {
+      style: {
+        color: T.muted,
+        fontSize: 10,
+        margin: "0 0 3px",
+        letterSpacing: 0.5
+      }
+    }, "RÈGLE"), /*#__PURE__*/React.createElement("p", {
+      style: {
+        color: T.pearl,
+        fontSize: 13,
+        margin: 0,
+        lineHeight: 1.6
+      }
+    }, feedback.rule)), /*#__PURE__*/React.createElement("button", {
+      onClick: next,
+      style: {
+        width: "100%",
+        background: feedback.correct ? T.green : T.orange,
+        color: T.arena,
+        border: "none",
+        padding: "11px",
+        borderRadius: 10,
+        fontFamily: "'Orbitron',sans-serif",
+        fontSize: 12,
+        fontWeight: 700,
+        cursor: "pointer",
+        marginTop: 12,
+        letterSpacing: 1
+      }
+    }, qIndex + 1 >= questions.length || bossHp <= 0 || playerHp <= 0 ? "VOIR LE RÉSULTAT →" : "QUESTION SUIVANTE →"))));
+  }
+  if (screen === "result") return /*#__PURE__*/React.createElement("div", {
+    style: {
+      minHeight: "100vh",
+      background: T.arena,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      fontFamily: "'Inter',sans-serif",
+      padding: 24
+    }
+  }, /*#__PURE__*/React.createElement("style", null, CSS), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      maxWidth: 400
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 64,
+      marginBottom: 16
+    }
+  }, playerHp <= 0 ? "💀" : "🏆"), /*#__PURE__*/React.createElement("h2", {
+    style: {
+      fontFamily: "'Orbitron',sans-serif",
+      color: playerHp <= 0 ? T.red : T.gold,
+      fontSize: 28,
+      margin: "0 0 6px",
+      letterSpacing: 2
+    }
+  }, playerHp <= 0 ? "KO !" : "VICTOIRE !"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: T.muted,
+      fontSize: 13,
+      marginBottom: 28
+    }
+  }, playerHp <= 0 ? `${boss?.name} t'a eu. Révise et reviens !` : `Tu as vaincu ${boss?.name} !`), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: T.night,
+      borderRadius: 16,
+      padding: 24,
+      marginBottom: 24
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr 1fr",
+      gap: 16
+    }
+  }, [["SCORE", score, T.gold], ["PV RESTANTS", playerHp, T.green], ["COMBO MAX", streak, T.orange]].map(([l, v, c]) => /*#__PURE__*/React.createElement("div", {
+    key: l
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: "'Orbitron',sans-serif",
+      fontSize: 24,
+      color: c,
+      fontWeight: 900
+    }
+  }, v), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
+      color: T.muted,
+      letterSpacing: 0.5,
+      marginTop: 2
+    }
+  }, l))))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 10,
+      justifyContent: "center",
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "bh",
+    onClick: () => startBattle(boss, gameMode),
+    style: {
+      background: T.green,
+      color: T.arena,
+      border: "none",
+      padding: "12px 24px",
+      borderRadius: 10,
+      fontFamily: "'Orbitron',sans-serif",
+      fontSize: 11,
+      fontWeight: 700,
+      cursor: "pointer",
+      letterSpacing: 1
+    }
+  }, "↺ REJOUER"), /*#__PURE__*/React.createElement("button", {
+    className: "bh",
+    onClick: () => setScreen("select"),
+    style: {
+      background: T.panel,
+      color: T.pearl,
+      border: `1px solid ${T.muted}40`,
+      padding: "12px 24px",
+      borderRadius: 10,
+      fontFamily: "'Orbitron',sans-serif",
+      fontSize: 11,
+      fontWeight: 700,
+      cursor: "pointer",
+      letterSpacing: 1
+    }
+  }, "AUTRE BOSS"), /*#__PURE__*/React.createElement("button", {
+    className: "bh",
+    onClick: () => setScreen("home"),
+    style: {
+      background: T.panel,
+      color: T.muted,
+      border: `1px solid ${T.muted}20`,
+      padding: "12px 24px",
+      borderRadius: 10,
+      fontFamily: "'Orbitron',sans-serif",
+      fontSize: 11,
+      cursor: "pointer",
+      letterSpacing: 1
+    }
+  }, "ACCUEIL"))));
+  return null;
+}
+ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.createElement(GrammarArena, null));
+
+try {
+  var rootEl = document.getElementById("root");
+  if (window.React && window.ReactDOM) {
+    ReactDOM.createRoot(rootEl).render(React.createElement(GrammarArena));
+  } else {
+    rootEl.innerHTML = '<div style="padding:40px;color:#FF4466;font-family:sans-serif;text-align:center;">Erreur : React n\'a pas pu se charger. Vérifiez votre connexion internet et rechargez la page.</div>';
+  }
+} catch (e) {
+  document.getElementById("root").innerHTML = '<div style="padding:40px;color:#FF4466;font-family:sans-serif;text-align:center;">Erreur de chargement : ' + e.message + '</div>';
+  console.error(e);
+}
+</script>
+</body>
+</html>
